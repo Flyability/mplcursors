@@ -174,6 +174,11 @@ class Cursor:
             - 2, alias `HoverMode.Transient`: hovering is active; annotations
               are removed as soon as the mouse moves away from the artist.
 
+        interpolated_picking : bool, default: True
+            Whether to be able to retrieve interpolated data in between the
+            actual data points in a line plot. When set to False, only the
+            actual data points can be selected.
+
         bindings : dict, optional
             A mapping of actions to button and keybindings.  Valid keys are:
 
