@@ -157,7 +157,7 @@ def _with_attrs(array, **kwargs):
 
 
 @functools.singledispatch
-def compute_pick(artist, event):
+def compute_pick(artist, event, interpolated_picking = True):
     """
     Find whether *artist* has been picked by *event*.
 
@@ -297,7 +297,7 @@ def _untransform(orig_xy, screen_xy, ax):
 
 
 @compute_pick.register(Line2D)
-def _(artist, event):
+def _(artist, event, interpolated_picking):
     # No need to call `line.contains` as we're going to redo the work anyways
     # (also see matplotlib/matplotlib#6645, though that's fixed in mpl2.1).
 
@@ -322,7 +322,7 @@ def _(artist, event):
                 Selection(artist, target, argmin, ds[argmin], None, None))
     # If lines are visible, find the closest projection.
     if (artist.get_linestyle() not in ["None", "none", " ", "", None]
-            and len(artist.get_xydata()) > 1):
+            and len(artist.get_xydata()) > 1 and interpolated_picking):
         sel = _compute_projection_pick(artist, artist.get_path(), xy)
         if sel is not None:
             sel = sel._replace(index={
@@ -340,7 +340,7 @@ def _(artist, event):
 @compute_pick.register(PathPatch)
 @compute_pick.register(Polygon)
 @compute_pick.register(Rectangle)
-def _(artist, event):
+def _(artist, event, interpolated_picking):
     sel = _compute_projection_pick(
         artist, artist.get_path(), (event.x, event.y))
     if sel and sel.dist < PATCH_PICKRADIUS:
@@ -350,7 +350,7 @@ def _(artist, event):
 @compute_pick.register(LineCollection)
 @compute_pick.register(PatchCollection)
 @compute_pick.register(PathCollection)
-def _(artist, event):
+def _(artist, event, interpolated_picking):
     offsets = artist.get_offsets()
     paths = artist.get_paths()
     if _is_scatter(artist):
@@ -387,7 +387,7 @@ def _(artist, event):
 
 
 @compute_pick.register(AxesImage)
-def _(artist, event):
+def _(artist, event, interpolated_picking):
     if type(artist) != AxesImage:
         # Skip and warn on subclasses (`NonUniformImage`, `PcolorImage`) as
         # they do not implement `contains` correctly.  Even if they did, they
@@ -410,7 +410,7 @@ def _(artist, event):
 
 @compute_pick.register(Barbs)
 @compute_pick.register(Quiver)
-def _(artist, event):
+def _(artist, event, interpolated_picking):
     offsets = artist.get_offsets()
     offsets_screen = artist.get_offset_transform().transform(offsets)
     ds = np.hypot(*(offsets_screen - [event.x, event.y]).T)
@@ -424,17 +424,17 @@ def _(artist, event):
 
 
 @compute_pick.register(Text)
-def _(artist, event):
+def _(artist, event, interpolated_picking):
     return
 
 
 @compute_pick.register(ContainerArtist)
-def _(artist, event):
-    return compute_pick(artist.container, event)
+def _(artist, event, interpolated_picking):
+    return compute_pick(artist.container, event, interpolated_picking)
 
 
 @compute_pick.register(BarContainer)
-def _(container, event):
+def _(container, event, interpolated_picking):
     try:
         (idx, patch), = {
             (idx, patch) for idx, patch in enumerate(container.patches)
@@ -454,11 +454,13 @@ def _(container, event):
 
 
 @compute_pick.register(ErrorbarContainer)
-def _(container, event):
+def _(container, event, interpolated_picking):
     data_line, cap_lines, err_lcs = container
-    sel_data = compute_pick(data_line, event) if data_line else None
+    sel_data = compute_pick(data_line, event, interpolated_picking) \
+        if data_line else None
     sel_err = min(
-        filter(None, (compute_pick(err_lc, event) for err_lc in err_lcs)),
+        filter(None, (compute_pick(err_lc, event, interpolated_picking) \
+            for err_lc in err_lcs)),
         key=lambda sel: sel.dist, default=None)
     if (sel_data and sel_data.dist < getattr(sel_err, "dist", np.inf)):
         return sel_data
@@ -474,15 +476,15 @@ def _(container, event):
 
 
 @compute_pick.register(StemContainer)
-def _(container, event):
-    sel = compute_pick(container.markerline, event)
+def _(container, event, interpolated_picking):
+    sel = compute_pick(container.markerline, event, interpolated_picking)
     if sel:
         return sel
     if not isinstance(container.stemlines, LineCollection):
         warnings.warn("Only stem plots created with use_line_collection=True "
                       "are supported.")
         return
-    sel = compute_pick(container.stemlines, event)
+    sel = compute_pick(container.stemlines, event, interpolated_picking)
     if sel:
         idx, _ = sel.index
         target = container.stemlines.get_segments()[idx][-1]
