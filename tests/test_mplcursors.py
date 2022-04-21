@@ -114,7 +114,7 @@ def test_degenerate_inputs(ax):
 @pytest.mark.parametrize("plotter", [Axes.plot, Axes.fill])
 def test_line(ax, plotter):
     artist, = plotter(ax, [0, .2, 1], [0, .8, 1], label="foo")
-    cursor = mplcursors.cursor(multiple=True)
+    cursor = mplcursors.cursor(multiple=True, interpolated_picking=True)
     # Far, far away.
     _process_event("__mouse_click__", ax, (0, 1), 1)
     assert len(cursor.selections) == len(ax.figure.artists) == 0
@@ -173,7 +173,7 @@ def test_steps_index():
 def test_steps_pre(ax):
     ax.plot([0, 1], [0, 1], drawstyle="steps-pre")
     ax.set(xlim=(-1, 2), ylim=(-1, 2))
-    cursor = mplcursors.cursor()
+    cursor = mplcursors.cursor(interpolated_picking=True)
     _process_event("__mouse_click__", ax, (1, 0), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (0, .5), 1)
@@ -187,7 +187,7 @@ def test_steps_pre(ax):
 def test_steps_mid(ax):
     ax.plot([0, 1], [0, 1], drawstyle="steps-mid")
     ax.set(xlim=(-1, 2), ylim=(-1, 2))
-    cursor = mplcursors.cursor()
+    cursor = mplcursors.cursor(interpolated_picking=True)
     _process_event("__mouse_click__", ax, (0, 1), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (1, 0), 1)
@@ -206,7 +206,7 @@ def test_steps_mid(ax):
 def test_steps_post(ax):
     ax.plot([0, 1], [0, 1], drawstyle="steps-post")
     ax.set(xlim=(-1, 2), ylim=(-1, 2))
-    cursor = mplcursors.cursor()
+    cursor = mplcursors.cursor(interpolated_picking=True)
     _process_event("__mouse_click__", ax, (0, 1), 1)
     assert len(cursor.selections) == 0
     _process_event("__mouse_click__", ax, (.5, 0), 1)
@@ -234,7 +234,7 @@ def test_line_single_point(ax, ls):
                           (([np.nan, np.nan], "."), (0, 0), [])])
 def test_nan(ax, plot_args, click, targets):
     ax.plot(*plot_args)
-    cursor = mplcursors.cursor()
+    cursor = mplcursors.cursor(interpolated_picking=True)
     _process_event("__mouse_click__", ax, click, 1)
     assert len(cursor.selections) == len(ax.figure.artists) == len(targets)
     for sel, target in zip(cursor.selections, targets):
@@ -358,7 +358,7 @@ def test_bar(ax, plotter, order):
 
 def test_errorbar(ax):
     ax.errorbar(range(2), range(2), [(1, 1), (1, 2)])
-    cursor = mplcursors.cursor()
+    cursor = mplcursors.cursor(interpolated_picking=True)
     assert len(cursor.artists) == 1
     _process_event("__mouse_click__", ax, (0, 2), 1)
     assert len(cursor.selections) == 0
@@ -415,7 +415,7 @@ def test_misc_artists(ax, plotter, warns):
 def test_indexless_projections(fig):
     ax = fig.subplots(subplot_kw={"projection": "polar"})
     ax.plot([1, 2], [3, 4])
-    cursor = mplcursors.cursor()
+    cursor = mplcursors.cursor(interpolated_picking=True)
     _process_event("__mouse_click__", ax, (1, 3), 1)
     assert len(cursor.selections) == 1
     _process_event("key_press_event", ax, (.123, .456), "shift+left")
@@ -435,7 +435,7 @@ def test_cropped_by_axes(fig):
 @pytest.mark.parametrize("plotter", [Axes.plot, Axes.scatter, Axes.errorbar])
 def test_move(ax, plotter):
     plotter(ax, [0, 1, 2], [0, 1, np.nan])
-    cursor = mplcursors.cursor()
+    cursor = mplcursors.cursor(interpolated_picking=True)
     # Nothing happens with no cursor.
     _process_event("key_press_event", ax, (.123, .456), "shift+left")
     assert len(cursor.selections) == 0
@@ -464,7 +464,7 @@ def test_move(ax, plotter):
 def test_hover(ax, hover):
     l1, = ax.plot([0, 1])
     l2, = ax.plot([1, 2])
-    cursor = mplcursors.cursor(hover=hover)
+    cursor = mplcursors.cursor(hover=hover, interpolated_picking=True)
     _process_event("motion_notify_event", ax, (.5, .5), 1)
     assert len(cursor.selections) == 0  # No trigger if mouse button pressed.
     _process_event("motion_notify_event", ax, (.5, .5))
@@ -480,7 +480,7 @@ def test_highlight(ax, plotter):
     plotter(ax, [0, 1], [0, 1])
     ax.set(xlim=(-1, 2), ylim=(-1, 2))
     base_children = {*ax.artists, *ax.lines, *ax.collections}
-    cursor = mplcursors.cursor(highlight=True)
+    cursor = mplcursors.cursor(highlight=True, interpolated_picking=True)
     _process_event("__mouse_click__", ax, (0, 0), 1)
     # On Matplotlib<=3.4, the highlight went to ax.artists.  On >=3.5, it goes
     # to its type-specific container.  The construct below handles both cases.
@@ -501,7 +501,7 @@ def test_misc_artists_highlight(ax):
 def test_callback(ax):
     ax.plot([0, 1])
     calls = []
-    cursor = mplcursors.cursor()
+    cursor = mplcursors.cursor(interpolated_picking=True)
     @cursor.connect("add")
     def on_add(sel):
         calls.append(sel)
@@ -521,7 +521,7 @@ def test_remove_while_adding(ax):
 
 def test_no_duplicate(ax):
     ax.plot([0, 1])
-    cursor = mplcursors.cursor(multiple=True)
+    cursor = mplcursors.cursor(multiple=True, interpolated_picking=True)
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert len(cursor.selections) == 1
@@ -529,7 +529,7 @@ def test_no_duplicate(ax):
 
 def test_remove_multiple_overlapping(ax):
     ax.plot([0, 1])
-    cursor = mplcursors.cursor(multiple=True)
+    cursor = mplcursors.cursor(multiple=True, interpolated_picking=True)
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     sel, = cursor.selections
     cursor.add_selection(copy.copy(sel))
@@ -542,7 +542,7 @@ def test_remove_multiple_overlapping(ax):
 
 def test_autoalign(ax):
     ax.plot([0, 1])
-    cursor = mplcursors.cursor()
+    cursor = mplcursors.cursor(interpolated_picking=True)
     cursor.connect(
         "add", lambda sel: sel.annotation.set(position=(-10, 0)))
     _process_event("__mouse_click__", ax, (.5, .5), 1)
@@ -582,7 +582,7 @@ def test_removed_artist(ax):
 
 def test_remove_cursor(ax):
     ax.plot([0, 1])
-    cursor = mplcursors.cursor()
+    cursor = mplcursors.cursor(interpolated_picking=True)
     _process_event("__mouse_click__", ax, (.5, .5), 1)
     assert len(cursor.selections) == len(ax.figure.artists) == 1
     cursor.remove()
@@ -593,7 +593,7 @@ def test_remove_cursor(ax):
 
 def test_keys(ax):
     ax.plot([0, 1])
-    cursor = mplcursors.cursor(multiple=True)
+    cursor = mplcursors.cursor(multiple=True, interpolated_picking=True)
     _process_event("__mouse_click__", ax, (.3, .3), 1)
     # Toggle visibility.
     _process_event("key_press_event", ax, (.123, .456), "v")
@@ -646,7 +646,8 @@ def test_multiple_figures(ax):
     _, ax2 = plt.subplots()
     ax1.plot([0, 1])
     ax2.plot([0, 1])
-    cursor = mplcursors.cursor([ax1, ax2], multiple=True)
+    cursor = mplcursors.cursor([ax1, ax2], multiple=True,
+                               interpolated_picking=True)
     # Add something on the first axes.
     _process_event("__mouse_click__", ax1, (.5, .5), 1)
     assert len(cursor.selections) == 1
