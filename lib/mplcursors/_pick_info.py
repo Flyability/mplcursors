@@ -226,7 +226,7 @@ class Index:
         return cls(i, x, y)
 
 
-def _compute_projection_pick(artist, path, xy):
+def _compute_projection_pick(artist, path, xy, interpolated_picking = True):
     """
     Project *xy* on *path* to obtain a `Selection` for *artist*.
 
@@ -264,7 +264,10 @@ def _compute_projection_pick(artist, path, xy):
     with np.errstate(invalid="ignore"):
         dot = np.clip(np.einsum("ij,ij->i", vs, us), 0, ls, out=vs[:, 0])
     # Projections.
-    projs = vertices[:-1] + dot[:, None] * us
+    if interpolated_picking:
+        projs = vertices[:-1] + dot[:, None] * us
+    else:
+        projs = vertices[:-1]
     ds = np.hypot(*(xy - projs).T, out=vs[:, 1])
     try:
         argmin = np.nanargmin(ds)
@@ -322,8 +325,9 @@ def _(artist, event, interpolated_picking):
                 Selection(artist, target, argmin, ds[argmin], None, None))
     # If lines are visible, find the closest projection.
     if (artist.get_linestyle() not in ["None", "none", " ", "", None]
-            and len(artist.get_xydata()) > 1 and interpolated_picking):
-        sel = _compute_projection_pick(artist, artist.get_path(), xy)
+            and len(artist.get_xydata()) > 1):
+        sel = _compute_projection_pick(artist, artist.get_path(), xy,
+                                       interpolated_picking)
         if sel is not None:
             sel = sel._replace(index={
                 "_draw_lines": lambda _, index: index,
