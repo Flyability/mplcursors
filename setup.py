@@ -53,12 +53,12 @@ def _pth_hook():
 
 
 setup(
-    name="mplcursors",
+    name="mplcursors-flya",
     description="Interactive data selection cursors for Matplotlib.",
     long_description=open("README.rst", encoding="utf-8").read(),
     long_description_content_type="text/x-rst",
-    author="Antony Lee",
-    url="https://github.com/anntzer/mplcursors",
+    author="Antony Lee, Flyability",
+    url="https://github.com/Flyability/mplcursors",
     license="MIT",
     classifiers=[
         "Development Status :: 4 - Beta",

@@ -138,6 +138,7 @@ class Cursor:
                  multiple=False,
                  highlight=False,
                  hover=False,
+                 interpolated_picking=False,
                  bindings=None,
                  annotation_kwargs=None,
                  annotation_positions=None,
@@ -172,6 +173,11 @@ class Cursor:
               False.
             - 2, alias `HoverMode.Transient`: hovering is active; annotations
               are removed as soon as the mouse moves away from the artist.
+
+        interpolated_picking : bool, default: False
+            Whether to be able to retrieve interpolated data in between the
+            actual data points in a line plot. When set to False, only the
+            actual data points can be selected.
 
         bindings : dict, optional
             A mapping of actions to button and keybindings.  Valid keys are:
@@ -233,6 +239,7 @@ class Cursor:
         self._last_auto_position = None
         self._callbacks = {"add": [], "remove": []}
         self._hover = hover
+        self._interpolated_picking = interpolated_picking
 
         self._suppressed_events = WeakSet()
         connect_pairs = [
@@ -598,7 +605,8 @@ class Cursor:
                     or not artist.get_visible()
                     or not artist.axes.contains(event)[0]):  # Cropped by axes.
                 continue
-            pi = _pick_info.compute_pick(artist, per_axes_event[artist.axes])
+            pi = _pick_info.compute_pick(artist, per_axes_event[artist.axes],
+                                         self._interpolated_picking)
             if pi:
                 pis.append(pi)
         # The any() check avoids picking an already selected artist at the same

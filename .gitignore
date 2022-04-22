@@ -13,3 +13,4 @@ oprofile_data/
 *.so
 .coverage
 .gdb_history
+.vscode/
