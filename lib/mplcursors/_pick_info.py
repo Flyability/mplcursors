@@ -346,7 +346,7 @@ def _(artist, event, interpolated_picking):
 @compute_pick.register(Rectangle)
 def _(artist, event, interpolated_picking):
     sel = _compute_projection_pick(
-        artist, artist.get_path(), (event.x, event.y))
+        artist, artist.get_path(), (event.x, event.y), interpolated_picking)
     if sel and sel.dist < PATCH_PICKRADIUS:
         return sel
 
@@ -379,7 +379,8 @@ def _(artist, event, interpolated_picking):
                 artist,
                 Affine2D().translate(*offsets[ind % len(offsets)])
                 .transform_path(paths[ind % len(paths)]),
-                (event.x, event.y))
+                (event.x, event.y),
+                interpolated_picking)
             for ind in range(max(len(offsets), len(paths)))])]
         if not sels:
             return None
